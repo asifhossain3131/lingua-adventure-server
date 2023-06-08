@@ -83,10 +83,25 @@ app.get('/users',async(req,res)=>{
 
     // classes related 
     app.get('/classes',async(req,res)=>{
-      const result=await classCollections.find().sort({enrolledStudents:-1}).limit(6).toArray()
+      const sort=req.query.sort
+      const limit=parseInt(req.query.limit )||6
+      const page=parseInt(req.query.page)||0
+      const skip=page*limit
+      let result=[]
+       if(sort===1){
+        result=await classCollections.find().sort({enrolledStudents:-1}).limit(6).toArray()
+       }
+       else{
+        result=await classCollections.find().skip(skip).limit(limit).toArray()
+       }
+     
       res.send(result)
     })
 
+    app.get('/classesCount', async(req,res)=>{
+      const count=await classCollections.countDocuments()
+      res.send({totalCounts:count})
+    })
 
 
  // Send a ping to confirm a successful connection
