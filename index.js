@@ -48,6 +48,8 @@ async function run() {
     const classCollections=client.db('linguaAdventure').collection('classes')
     const instructorCollections=client.db('linguaAdventure').collection('instructors')
     const sliderCollections=client.db('linguaAdventure').collection('sliders')
+    const classCartCollections=client.db('linguaAdventure').collection('class-cart')
+    
     
      
     
@@ -98,11 +100,43 @@ app.get('/users',async(req,res)=>{
       res.send(result)
     })
 
+    app.get('/class/:id',async(req,res)=>{
+      const id=req.params.id
+      const result=await classCollections.findOne({_id: new ObjectId(id)})
+      res.send(result)
+    })
+
     app.get('/classesCount', async(req,res)=>{
       const count=await classCollections.countDocuments()
       res.send({totalCounts:count})
     })
 
+
+    //  class cart related 
+    app.post('/cartClass', verifyToken, async(req,res)=>{
+      const user=req.query.email
+      const courseName=req.query.courseName
+      const price=req.query.price
+
+      const classCart=await classCartCollections.findOne({user})
+      if(classCart){
+        const exist=classCart.classInfo.find(item=>item.courseName===courseName)
+        if(!exist){
+          await classCartCollections.updateOne({user}, {$push:{classInfo:{courseName,price}}})
+        }
+       else{
+        return res.send({error:true,message:'already exists'})
+       }
+      }
+      else{
+        const newCart={
+          user,
+          classInfo:[{courseName,price}]
+        }
+        await classCartCollections.insertOne(newCart)
+      }
+      res.send({error:false, message:'successfully added'})
+    })
 
  // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
