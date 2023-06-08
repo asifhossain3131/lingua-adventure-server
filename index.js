@@ -8,7 +8,7 @@ const jwt=require('jsonwebtoken')
 const port=process.env.PORT||5000;
 const app=express()
 
-// middleware
+// middlewares
 app.use(cors())
 app.use(express.json())
 
@@ -43,7 +43,12 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
+    const userCollections=client.db('linguaAdventure').collection('users')
+    const classCollections=client.db('linguaAdventure').collection('classes')
+    const instructorCollections=client.db('linguaAdventure').collection('instructors')
+    const sliderCollections=client.db('linguaAdventure').collection('sliders')
+    
      
     
     // jwt related 
@@ -53,6 +58,34 @@ async function run() {
       res.send({token})
     })
 
+
+    // sliders related 
+    app.get('/sliders', async(req,res)=>{
+      const result=await sliderCollections.find().toArray()
+      res.send(result)
+    })
+
+    // user related
+app.get('/users',async(req,res)=>{
+  const result=await userCollections.find().toArray()
+  res.send(result)
+})
+
+    app.post('/users',async(req,res)=>{
+      const user=req.body
+      const exists=await userCollections.findOne({email:user.email})
+      if(exists){
+        return res.send({message:'user already exists'})
+      }
+      const result=await userCollections.insertOne(user)
+      res.send(result)
+    })
+
+    // classes related 
+    app.get('/classes',async(req,res)=>{
+      const result=await classCollections.find().sort({enrolledStudents:-1}).limit(6).toArray()
+      res.send(result)
+    })
 
 
 
@@ -68,7 +101,7 @@ run().catch(console.log);
 
 
 app.get('/',(req,res)=>{
-    res.send('assigment is running now')
+    res.send('linguaAdventure is running now')
 })
 
 
