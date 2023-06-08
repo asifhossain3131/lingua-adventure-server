@@ -49,6 +49,7 @@ async function run() {
     const instructorCollections=client.db('linguaAdventure').collection('instructors')
     const sliderCollections=client.db('linguaAdventure').collection('sliders')
     const classCartCollections=client.db('linguaAdventure').collection('class-cart')
+    const reviewCollections=client.db('linguaAdventure').collection('reviews')
     
     
      
@@ -136,6 +137,12 @@ app.get('/users',async(req,res)=>{
         await classCartCollections.insertOne(newCart)
       }
       res.send({error:false, message:'successfully added'})
+    })
+
+    // reviews related 
+    app.get('/reviews',async(req,res)=>{
+      const result=await reviewCollections.find().toArray()
+      res.send(result)
     })
 
  // Send a ping to confirm a successful connection
