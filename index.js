@@ -133,15 +133,17 @@ app.get('/users/admin/:email', verifyToken, async(req,res)=>{
       res.send(result)
     })
 
-    // instructtor related 
+    // instructor related 
     app.get('/instructors', async(req,res)=>{
 const sort=req.query.sort
+let result
 if(sort>0){
-await instructorCollections.find().sort({followers:-1}).limit(6).toArray()
+result=await instructorCollections.find().sort({followers:-1}).limit(6).toArray()
 }
 else{
-await instructorCollections.find().toArray()
+result=await instructorCollections.find().toArray()
 }
+res.send(result)
     })
 
     // classes related 
