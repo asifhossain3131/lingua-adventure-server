@@ -61,6 +61,26 @@ async function run() {
       res.send({token})
     })
 
+    const verifyAdmin=async (req,res,next)=>{
+      const email=req.decoded.email
+      const filter={email:email}
+      const user=await userCollections.findOne(filter)
+      if(user?.role!=='admin'){
+        return res.status(403).send({error:true, message:'forbidden access'})
+      }
+      next()
+    }
+
+    const verifyInstructor=async (req,res,next)=>{
+      const email=req.decoded.email
+      const filter={email:email}
+      const user=await userCollections.findOne(filter)
+      if(user?.role!=='instructor'){
+        return res.status(403).send({error:true, message:'forbidden access'})
+      }
+      next()
+    }    
+
 
     // sliders related 
     app.get('/sliders', async(req,res)=>{
@@ -69,8 +89,19 @@ async function run() {
     })
 
     // user related
-app.get('/users',async(req,res)=>{
+app.get('/users',verifyToken, async(req,res)=>{
   const result=await userCollections.find().toArray()
+  res.send(result)
+})
+
+app.get('/users/admin/:email', verifyToken, async(req,res)=>{
+  const email=req.params.email
+  const filter={email: email}
+  const user=await userCollections.findOne(filter)
+  if(req.decoded.email!==email){
+    return res.send({admin:false})
+  }
+  const result={admin: user?.role==='admin'}
   res.send(result)
 })
 
@@ -82,6 +113,35 @@ app.get('/users',async(req,res)=>{
       }
       const result=await userCollections.insertOne(user)
       res.send(result)
+    })
+
+    app.patch('/user/:id',async(req,res)=>{
+      const filter={_id:new ObjectId(req.params.id)}
+      const role=req.query.role
+      const updateUser={
+        $set:{
+          role:role
+        }
+      }
+      const result=await userCollections.updateOne(filter,updateUser)
+      res.send(result)
+    })
+
+    app.delete('/user/:id',async(req,res)=>{
+      const filter={_id:new ObjectId(req.params.id)}
+      const result=await userCollections.deleteOne(filter)
+      res.send(result)
+    })
+
+    // instructtor related 
+    app.get('/instructors', async(req,res)=>{
+const sort=req.query.sort
+if(sort>0){
+await instructorCollections.find().sort({followers:-1}).limit(6).toArray()
+}
+else{
+await instructorCollections.find().toArray()
+}
     })
 
     // classes related 
@@ -114,6 +174,21 @@ app.get('/users',async(req,res)=>{
 
 
     //  class cart related 
+    app.get('/cartClass',verifyToken, async(req,res)=>{
+      const email=req?.query?.email
+      if(!email){
+       res.send([])
+      }
+    
+      if(req.decoded.email!==email){
+        return res.status(403).send('forbidden access')
+      }
+      
+      const query={user:email}
+      const result=await classCartCollections.findOne(query).toArray()
+      res.send(result)
+    })
+
     app.post('/cartClass', verifyToken, async(req,res)=>{
       const user=req.query.email
       const courseName=req.query.courseName
