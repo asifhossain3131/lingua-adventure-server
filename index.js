@@ -187,33 +187,37 @@ res.send(result)
       }
       
       const query={user:email}
-      const result=await classCartCollections.findOne(query).toArray()
+      const result=await classCartCollections.findOne(query)
       res.send(result)
     })
 
     app.post('/cartClass', verifyToken, async(req,res)=>{
       const user=req.query.email
       const courseName=req.query.courseName
-      const price=req.query.price
-
-      const classCart=await classCartCollections.findOne({user})
-      if(classCart){
-        const exist=classCart.classInfo.find(item=>item.courseName===courseName)
-        if(!exist){
-          await classCartCollections.updateOne({user}, {$push:{classInfo:{courseName,price}}})
+      const course=await classCollections.findOne({classname:courseName})
+      if(course){
+        const{classname,price,totalSeats,enrolledStudents}=course
+        const avilableSeats=totalSeats-enrolledStudents
+ 
+        const classCart=await classCartCollections.findOne({user})
+        if(classCart){
+          const exist=classCart.classInfo.find(item=>item.courseName===courseName)
+          if(!exist){
+            await classCartCollections.updateOne({user}, {$push:{classInfo:{courseName,price,avilableSeats}}})
+          }
+         else{
+          return res.send({error:true,message:'already exists'})
+         }
         }
-       else{
-        return res.send({error:true,message:'already exists'})
-       }
-      }
-      else{
-        const newCart={
-          user,
-          classInfo:[{courseName,price}]
+        else{
+          const newCart={
+            user,
+            classInfo:[{courseName,price,avilableSeats}]
+          }
+          await classCartCollections.insertOne(newCart)
         }
-        await classCartCollections.insertOne(newCart)
+        res.send({error:false, message:'successfully added'})
       }
-      res.send({error:false, message:'successfully added'})
     })
 
     // reviews related 
