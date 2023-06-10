@@ -220,11 +220,21 @@ res.send(result)
       }
     })
 
+    app.patch('/cartClass/:courseName', verifyToken, async(req,res)=>{
+      const course=req.params.courseName
+      const email=req.query.email
+      const filter={user:email}
+      const updated={$pull:{classInfo:{courseName:course}}}
+      const result=await classCartCollections.updateOne(filter,updated)
+      res.send(result)
+    })
+
     // reviews related 
     app.get('/reviews',async(req,res)=>{
       const result=await reviewCollections.find().toArray()
       res.send(result)
     })
+
 
  // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
