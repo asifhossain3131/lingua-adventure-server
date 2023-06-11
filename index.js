@@ -259,6 +259,15 @@ res.send(result)
     })
 
     // payments related 
+    app.get('/payments/:email', verifyToken,async(req,res)=>{
+      const email=req.params.email
+      const paymentHistory = await paymentCollections.findOne({ email: email });
+      if (!paymentHistory) {
+        return res.status(404).send({ error: true, message: 'Payment history not found' });
+      }
+      const sortedHistory = paymentHistory.enrolledClasses.sort((a, b) => new Date(b.date) - new Date(a.date));
+      res.json(sortedHistory);
+    })
 
     //  helper function 
     const modifyDatabase=async(courseName,email,res)=>{
@@ -269,7 +278,7 @@ res.send(result)
       if(updatedClass.ok===1){
         const removedFromClassCart=await classCartCollections.updateOne({user:email},{$pull:{classInfo:{courseName:courseName}}})
         if(removedFromClassCart.modifiedCount>0){
-        return  res.status(200).send({message:'payment successful'})
+        return  res.status(200).send({message:'Payment successful'})
         }
       }
     }
