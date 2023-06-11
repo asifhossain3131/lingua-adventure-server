@@ -3,6 +3,8 @@ const cors = require('cors');
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt=require('jsonwebtoken')
+const stripe = require("stripe")(`${process.env.STRIPE_SECRET_KEY}`);
+
 
 
 const port=process.env.PORT||5000;
@@ -81,6 +83,20 @@ async function run() {
       next()
     }    
 
+    // payment intent related 
+    app.post("/create-payment-intent",verifyToken, async (req, res) => {
+      const {price}= req.body;
+      const totalPrice=parseInt(price*100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: totalPrice,
+        currency: "usd",
+        payment_method_types: ['card']
+      });
+    
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
 
     // sliders related 
     app.get('/sliders', async(req,res)=>{
@@ -163,11 +179,17 @@ res.send(result)
       res.send(result)
     })
 
+    app.get('/classes/:courseName',async(req,res)=>{
+      const result=await classCollections.findOne({classname:req?.params?.courseName})
+      res.send(result)
+    })
+
     app.get('/class/:id',async(req,res)=>{
       const id=req.params.id
       const result=await classCollections.findOne({_id: new ObjectId(id)})
       res.send(result)
     })
+
 
     app.get('/classesCount', async(req,res)=>{
       const count=await classCollections.countDocuments()
