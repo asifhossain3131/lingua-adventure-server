@@ -197,6 +197,17 @@ res.send(result)
       res.send({totalCounts:count})
     })
 
+    app.get('/instructorClasses/:instructorName',verifyToken,async(req,res)=>{
+      const result=await classCollections.find({instructorName:req.params.instructorName}).toArray()
+      res.send(result)
+    })
+
+    app.post('/classes', async(req,res)=>{
+      const classInfo=req.body
+      const result=await classCollections.insertOne(classInfo)
+      res.send(result)
+    })
+
 
     //  class cart related 
     app.get('/cartClass',verifyToken, async(req,res)=>{
@@ -278,6 +289,7 @@ res.send(result)
       if(updatedClass.ok===1){
         const removedFromClassCart=await classCartCollections.updateOne({user:email},{$pull:{classInfo:{courseName:courseName}}})
         if(removedFromClassCart.modifiedCount>0){
+          // to-do implement email sending 
         return  res.status(200).send({message:'Payment successful'})
         }
       }
