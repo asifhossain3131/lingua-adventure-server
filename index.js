@@ -52,6 +52,7 @@ async function run() {
     const sliderCollections=client.db('linguaAdventure').collection('sliders')
     const classCartCollections=client.db('linguaAdventure').collection('class-cart')
     const reviewCollections=client.db('linguaAdventure').collection('reviews')
+    const paymentCollections=client.db('linguaAdventure').collection('payments')
     
     
      
@@ -257,6 +258,62 @@ res.send(result)
       res.send(result)
     })
 
+    // payments related 
+
+    //  helper function 
+    const modifyDatabase=async(courseName,email,res)=>{
+      const updatedClass=await classCollections.findOneAndUpdate(
+        {classname:courseName},
+        {$inc:{enrolledStudents:1}}
+      )
+      if(updatedClass.ok===1){
+        const removedFromClassCart=await classCartCollections.updateOne({user:email},{$pull:{classInfo:{courseName:courseName}}})
+        if(removedFromClassCart.modifiedCount>0){
+        return  res.status(200).send({message:'payment successful'})
+        }
+      }
+    }
+
+    app.post('/payments',verifyToken,async(req,res)=>{
+      const paymentInfo=req.body
+      const{email,courseName,transId,price,date,instructor}=paymentInfo
+     const paymentHistories=await paymentCollections.findOne({email:email})
+     if(paymentHistories){
+       const exist=paymentHistories.enrolledClasses.find(item=>item.courseName===courseName)
+       if(!exist){
+        const newCourse= await paymentCollections.updateOne({email:email}, {$push:{enrolledClasses:{courseName,transId,date,price,instructor}}})
+         if(newCourse.modifiedCount>0){
+          modifyDatabase(courseName,email,res)
+         }
+       }
+      else{
+       return res.send({error:true,message:'already exists'})
+      }
+     }
+     else{
+       const newCart={
+         email:email,
+         enrolledClasses:[{courseName,transId,date,price,instructor}]
+       }
+       const newCourse=await paymentCollections.insertOne(newCart)
+      if(newCourse.acknowledged===true){
+        modifyDatabase(courseName,email,res)
+      }
+     }
+    })
+
+    // enrolledClasses related 
+    app.get('/enrolledClasses/:email', verifyToken,async(req,res)=>{
+      const email=req.params.email
+      if(!email){
+        return res.send({})
+      }
+      if(req.decoded.email!==email){
+        return res.status(403).send({error:true,message:'forbidden access'})
+      }
+      const result=await paymentCollections.findOne({email:email})
+      res.send(result)
+    })
 
  // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
