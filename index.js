@@ -141,6 +141,12 @@ app.get('/users/role/:email', verifyToken, async(req,res)=>{
         }
       }
       const result=await userCollections.updateOne(filter,updateUser)
+      if(role==='instructor' && result.modifiedCount>0){
+        const instructor=await userCollections.findOne(filter)
+         if(instructor){
+          await instructorCollections.insertOne(instructor)
+         }
+      }
       res.send(result)
     })
 
