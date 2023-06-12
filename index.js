@@ -111,7 +111,7 @@ app.get('/users',verifyToken,verifyAdmin, async(req,res)=>{
   res.send(result)
 })
 
-app.get('/users/role/:email', verifyToken, verifyAdmin, async(req,res)=>{
+app.get('/users/role/:email', verifyToken, async(req,res)=>{
   const email=req.params.email
   const filter={email: email}
   const user=await userCollections.findOne(filter)
