@@ -106,19 +106,19 @@ async function run() {
     })
 
     // user related
-app.get('/users',verifyToken, async(req,res)=>{
+app.get('/users',verifyToken,verifyAdmin, async(req,res)=>{
   const result=await userCollections.find().toArray()
   res.send(result)
 })
 
-app.get('/users/admin/:email', verifyToken, async(req,res)=>{
+app.get('/users/role/:email', verifyToken, verifyAdmin, async(req,res)=>{
   const email=req.params.email
   const filter={email: email}
   const user=await userCollections.findOne(filter)
   if(req.decoded.email!==email){
-    return res.send({admin:false})
+    return res.send({role:false})
   }
-  const result={admin: user?.role==='admin'}
+  const result={role: user?.role}
   res.send(result)
 })
 
@@ -132,7 +132,7 @@ app.get('/users/admin/:email', verifyToken, async(req,res)=>{
       res.send(result)
     })
 
-    app.patch('/user/:id',async(req,res)=>{
+    app.patch('/user/:id',verifyToken,verifyAdmin, async(req,res)=>{
       const filter={_id:new ObjectId(req.params.id)}
       const role=req.query.role
       const updateUser={
@@ -144,7 +144,7 @@ app.get('/users/admin/:email', verifyToken, async(req,res)=>{
       res.send(result)
     })
 
-    app.delete('/user/:id',async(req,res)=>{
+    app.delete('/user/:id',verifyToken,verifyAdmin,async(req,res)=>{
       const filter={_id:new ObjectId(req.params.id)}
       const result=await userCollections.deleteOne(filter)
       res.send(result)
@@ -197,12 +197,12 @@ res.send(result)
       res.send({totalCounts:count})
     })
 
-    app.get('/instructorClasses/:instructorName',verifyToken,async(req,res)=>{
+    app.get('/instructorClasses/:instructorName',verifyToken,verifyInstructor,async(req,res)=>{
       const result=await classCollections.find({instructorName:req.params.instructorName}).toArray()
       res.send(result)
     })
 
-    app.post('/classes', async(req,res)=>{
+    app.post('/classes',verifyToken,verifyInstructor, async(req,res)=>{
       const classInfo=req.body
       const result=await classCollections.insertOne(classInfo)
       res.send(result)
