@@ -174,7 +174,7 @@ res.send(result)
         result=await classCollections.find().sort({enrolledStudents:-1}).limit(6).toArray()
        }
        else{
-        result=await classCollections.find().skip(skip).limit(limit).toArray()
+        result=await classCollections.find().toArray()
        }
      
       res.send(result)
@@ -205,6 +205,30 @@ res.send(result)
     app.post('/classes',verifyToken,verifyInstructor, async(req,res)=>{
       const classInfo=req.body
       const result=await classCollections.insertOne(classInfo)
+      res.send(result)
+    })
+
+    app.patch('/class/:id',verifyToken,verifyAdmin, async(req,res)=>{
+      const filter={_id:new ObjectId(req.params.id)}
+      const status=req.query.status
+      const feedback=req.query.feedback
+      let result
+      if(!feedback){
+        const updatedClass={
+          $set:{
+            status:status
+          }
+        }
+         result=await classCollections.updateOne(filter,updatedClass)
+      }
+      else if(status==='denied' && feedback){
+        const updatedClass={
+          $set:{
+            feedback:feedback
+          }
+        }
+         result=await classCollections.updateOne(filter,updatedClass)
+      }
       res.send(result)
     })
 
