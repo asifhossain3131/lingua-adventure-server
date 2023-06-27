@@ -53,10 +53,9 @@ async function run() {
     const classCartCollections=client.db('linguaAdventure').collection('class-cart')
     const reviewCollections=client.db('linguaAdventure').collection('reviews')
     const paymentCollections=client.db('linguaAdventure').collection('payments')
+    const freeTrialCollections=client.db('linguaAdventure').collection('freeTrial')
     
-    
-     
-    
+
     // jwt related 
     app.post('/jwt',(req,res)=>{
       const user=req.body
@@ -167,6 +166,12 @@ else{
 result=await instructorCollections.find().toArray()
 }
 res.send(result)
+    })
+
+    app.patch('/instructors/:email', async(req,res)=>{
+      const email=req.params.email
+      const result=await instructorCollections.updateOne({email:email}, {$inc:{followers:1}})
+      res.send(result)
     })
 
     // classes related 
@@ -363,6 +368,18 @@ res.send(result)
         return res.status(403).send({error:true,message:'forbidden access'})
       }
       const result=await paymentCollections.findOne({email:email})
+      res.send(result)
+    })
+
+    // free trial applications 
+    app.post('/freeTrial', verifyToken, async(req,res)=>{
+      const info=req.body
+      const email=info.email
+      const exist=await freeTrialCollections.findOne({email:email})
+      if(exist){
+        return res.send({message:'already applied for one course'})
+      }
+      const result=await freeTrialCollections.insertOne(info)
       res.send(result)
     })
 
